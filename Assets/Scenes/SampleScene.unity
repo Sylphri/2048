@@ -597,3 +597,4 @@ MonoBehaviour:
   _cellPrefab: {fileID: 1923560138295095728, guid: a5362ec56de305a4ca97b69864d8f8d0, type: 3}
   _width: 4
   _height: 4
+  _secondsToSwipe: 0.1
