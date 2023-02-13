@@ -21,20 +21,24 @@ public class Field : MonoBehaviour
         _field = new int[_width, _height];
         _cells = new Cell[_width, _height];
         _swipeDetector.Swiped += OnSwiped;
-        _field[0, 0] = 2;
+        RandomSpawn();
         RenderCells();
     }
 
     void RandomSpawn()
     {
-        int x = Random.Range(0, _width);
-        int y = Random.Range(0, _height);
-        while (_field[x, y] != 0)
+        int pos = Random.Range(0, _width * _height);
+        for (int i = 0; i < _width * _height; i++)
         {
-            x = Random.Range(0, _width);
-            y = Random.Range(0, _height);
+            int clamp = pos % (_width * _height);
+            if (_field[clamp / _width, clamp % _height] == 0)
+            {
+                _field[clamp / _width, clamp % _height] =
+                    Random.Range(0f, 1f) > 0.9f ? 4 : 2;
+                return;
+            }
+            pos++;
         }
-        _field[x, y] = 2;
     }
 
     Vector3 GetCellPosition(int x, int y)
@@ -66,14 +70,15 @@ public class Field : MonoBehaviour
     IEnumerator Move(Transform cell, Vector3 position, float seconds)
     {
         float past = 0;
-        while((cell.position - position).magnitude > 9e-2)
+        while(cell != null && (cell.position - position).magnitude > 9e-2)
         {
             Vector3 offset = (position - cell.position) * Time.deltaTime / (seconds - past);
             cell.position += offset;
             past += Time.deltaTime;
             yield return null;
         }
-        cell.position = position;
+        if(cell != null)
+            cell.position = position;
     }
 
     private void OnSwiped(SwipeDirection direction)
@@ -104,28 +109,30 @@ public class Field : MonoBehaviour
 
     IEnumerator WaitBeforeRender(float seconds)
     {
-        yield return new WaitForSeconds(seconds + 0.01f);
+        yield return new WaitForSeconds(seconds);
         RenderCells();
         _canSwipe = true;
     }
 
     private void SlideLeft()
     {
+        _fieldChanged = false;
         for (int j = 0; j < _height; j++)
         {
+            int offset = -1;
             for(int i = 1; i < _width; i++)
             {
                 if (_field[i, j] == 0) continue;
 
                 int pos = i - 1;
-                while (_field[pos, j] == 0 && pos > 0) 
+                while (_field[pos, j] == 0 && pos > offset + 1) 
                     pos--;
 
-                _fieldChanged = true;
-                if(pos == 0 && _field[pos, j] == 0)
+                if(_field[pos, j] == 0)
                 {
                     _field[pos, j] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(pos, j), _secondsToSwipe));
                     continue;
                 }
@@ -134,6 +141,7 @@ public class Field : MonoBehaviour
                 {
                     _field[pos + 1, j] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(pos + 1, j), _secondsToSwipe));
                     continue;
                 }
@@ -142,31 +150,34 @@ public class Field : MonoBehaviour
                 {
                     _field[pos, j] *= 2;
                     _field[i, j] = 0;
+                    offset = pos;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(pos, j), _secondsToSwipe));
                     continue;
                 }
-                _fieldChanged = false;
             }
         }
     }
 
     private void SlideRight()
     {
+        _fieldChanged = false;
         for (int j = 0; j < _height; j++)
         {
+            int offset = _width;
             for (int i = _width - 2; i >= 0; i--)
             {
                 if (_field[i, j] == 0) continue;
 
                 int pos = i + 1;
-                while (_field[pos, j] == 0 && pos < _width - 1)
+                while (_field[pos, j] == 0 && pos < offset - 1)
                     pos++;
 
-                _fieldChanged = true;
-                if (pos == _width - 1 && _field[pos, j] == 0)
+                if (_field[pos, j] == 0)
                 {
                     _field[pos, j] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(pos, j), _secondsToSwipe));
                     continue;
                 }
@@ -175,6 +186,7 @@ public class Field : MonoBehaviour
                 {
                     _field[pos - 1, j] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(pos - 1, j), _secondsToSwipe));
                     continue;
                 }
@@ -183,31 +195,34 @@ public class Field : MonoBehaviour
                 {
                     _field[pos, j] *= 2;
                     _field[i, j] = 0;
+                    offset = pos;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(pos, j), _secondsToSwipe));
                     continue;
                 }
-                _fieldChanged = false;
             }
         }
     }
 
     private void SlideUp()
     {
+        _fieldChanged = false;
         for (int i = 0; i < _width; i++)
         {
+            int offset = _height;
             for (int j = _height - 2; j >= 0; j--)
             {
                 if (_field[i, j] == 0) continue;
 
                 int pos = j + 1;
-                while (_field[i, pos] == 0 && pos < _height - 1)
+                while (_field[i, pos] == 0 && pos < offset - 1)
                     pos++;
 
-                _fieldChanged = true;
-                if (pos == _height - 1 && _field[i, pos] == 0)
+                if (_field[i, pos] == 0)
                 {
                     _field[i, pos] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(i, pos), _secondsToSwipe));
                     continue;
                 }
@@ -216,6 +231,7 @@ public class Field : MonoBehaviour
                 {
                     _field[i, pos - 1] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(i, pos - 1), _secondsToSwipe));
                     continue;
                 }
@@ -224,31 +240,34 @@ public class Field : MonoBehaviour
                 {
                     _field[i, pos] *= 2;
                     _field[i, j] = 0;
+                    offset = pos;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(i, pos), _secondsToSwipe));
                     continue;
                 }
-                _fieldChanged = false;
             }
         }
     }
 
     private void SlideDown()
     {
+        _fieldChanged = false;
         for (int i = 0; i < _width; i++)
         {
+            int offset = -1;
             for (int j = 1; j < _height; j++)
             {
                 if (_field[i, j] == 0) continue;
 
                 int pos = j - 1;
-                while (_field[i, pos] == 0 && pos > 0)
+                while (_field[i, pos] == 0 && pos > offset + 1)
                     pos--;
 
-                _fieldChanged = true;
-                if (pos == 0 && _field[i, pos] == 0)
+                if (_field[i, pos] == 0)
                 {
                     _field[i, pos] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(i, pos), _secondsToSwipe));
                     continue;
                 }
@@ -257,6 +276,7 @@ public class Field : MonoBehaviour
                 {
                     _field[i, pos + 1] = _field[i, j];
                     _field[i, j] = 0;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(i, pos + 1), _secondsToSwipe));
                     continue;
                 }
@@ -265,10 +285,11 @@ public class Field : MonoBehaviour
                 {
                     _field[i, pos] *= 2;
                     _field[i, j] = 0;
+                    offset = pos;
+                    _fieldChanged = true;
                     StartCoroutine(Move(_cells[i, j].transform, GetCellPosition(i, pos), _secondsToSwipe));
                     continue;
                 }
-                _fieldChanged = false;
             }
         }
     }
