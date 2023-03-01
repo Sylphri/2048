@@ -21,10 +21,10 @@ public class SwipeDetector : MonoBehaviour, IDragHandler, IEndDragHandler
     public void OnEndDrag(PointerEventData data)
     {
         Vector2 swipeDir = data.position - data.pressPosition;
-        if(Mathf.Abs(swipeDir.x) > Mathf.Abs(swipeDir.y))
+        if (Mathf.Abs(swipeDir.x) > Mathf.Abs(swipeDir.y))
         {
             Swiped(swipeDir.x > 0 ? SwipeDirection.Right : SwipeDirection.Left);
-        }    
+        }
         else
         {
             Swiped(swipeDir.y > 0 ? SwipeDirection.Up : SwipeDirection.Down);
