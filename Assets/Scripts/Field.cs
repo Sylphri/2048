@@ -9,6 +9,7 @@ public class Field : MonoBehaviour
 {
     [SerializeField] private SwipeDetector _swipeDetector;
     [SerializeField] private GameObject _cellPrefab;
+    [SerializeField] private Score _gameScore;
 
     [SerializeField] private int _width;
     [SerializeField] private int _height;
@@ -25,6 +26,13 @@ public class Field : MonoBehaviour
         _field = new int[_width, _height];
         _cells = new Cell[_width, _height];
         _swipeDetector.Swiped += OnSwiped;
+        for (int i = 0; i < _width; i++)
+        {
+            for (int j = 0; j < _height; j++)
+            {
+                _field[i, j] = ((i + j) % 2 + 1) * 2;
+            }
+        }
         RandomSpawn();
         RenderCells();
     }
@@ -45,20 +53,19 @@ public class Field : MonoBehaviour
         }
     }
 
-    // TODO: implement properly
     private bool CanMove()
     {
         for (int i = 0; i < _width; i++)
         {
             for (int j = 0; j < _height; j++)
             {
-                if (i > 0 && (_field[i - 1, j] == _field[i, j] || _field[i - 1, j] == 0))
+                if (i > 0 && (_field[i - 1, j] == _field[i, j] || _field[i - 1, j] == 0)) 
                     return true;
-                if (i < _width - 1 && (_field[i + 1, j] == _field[i, j] || _field[i + 1, j] == 0))
+                if (i < _width - 1 && (_field[i + 1, j] == _field[i, j] || _field[i + 1, j] == 0)) 
                     return true;
-                if (j > 0 && (_field[i, j - 1] == _field[i, j] || _field[i, j - 1] == 0))
+                if (j > 0 && (_field[i, j - 1] == _field[i, j] || _field[i, j - 1] == 0)) 
                     return true;
-                if (j < _height - 1 && (_field[i, j + 1] == _field[i, j] || _field[i, j + 1] == 0))
+                if (j < _height - 1 && (_field[i, j + 1] == _field[i, j] || _field[i, j + 1] == 0)) 
                     return true;
             }
         }
@@ -129,7 +136,7 @@ public class Field : MonoBehaviour
         Slide(direction);
 
         if (_fieldChanged) RandomSpawn();
-        if (!CanMove()) Reload();
+        if (!CanMove()) StartCoroutine(Reload());
     }
 
     private IEnumerator Reload()
@@ -165,12 +172,12 @@ public class Field : MonoBehaviour
             case SwipeDirection.Up:
                 return new SlideData(Enumerable.Range(0, _width), Enumerable.Range(0, _height - 1).Reverse(), _height, false);
             case SwipeDirection.Down:
-                return new SlideData(Enumerable.Range(0, _width), Enumerable.Range(1, _height - 1), -1,false);
+                return new SlideData(Enumerable.Range(0, _width), Enumerable.Range(1, _height - 1), -1, false);
             default: throw new Exception("unreachable");
         }
     }
 
-    private int GetPos(int i, int j, SwipeDirection dir)
+    private int GetPos(int i, int j, SwipeDirection dir, int prev, bool prevMerge)
     {
         SlideData data = GetSlideData(dir);
         int pos = 0;
@@ -178,22 +185,22 @@ public class Field : MonoBehaviour
         {
             case SwipeDirection.Left:
                 pos = i - 1;
-                while (_field[pos, j] == 0 && pos > data.offset + 1)
+                while (_field[pos, j] == 0 && pos > data.offset + 1 && (!prevMerge || pos > prev + 1))
                     pos--;
                 break;
             case SwipeDirection.Right:
                 pos = i + 1;
-                while (_field[pos, j] == 0 && pos < data.offset - 1)
+                while (_field[pos, j] == 0 && pos < data.offset - 1 && (!prevMerge || pos < prev - 1))
                     pos++;
                 break;
             case SwipeDirection.Up:
                 pos = j + 1;
-                while (_field[i, pos] == 0 && pos < data.offset - 1)
+                while (_field[i, pos] == 0 && pos < data.offset - 1 && (!prevMerge || pos < prev - 1))
                     pos++;
                 break;
             case SwipeDirection.Down:
                 pos = j - 1;
-                while (_field[i, pos] == 0 && pos > data.offset + 1)
+                while (_field[i, pos] == 0 && pos > data.offset + 1 && (!prevMerge || pos > prev + 1))
                     pos--;
                 break;
             default: throw new Exception("unreachable");
@@ -281,13 +288,16 @@ public class Field : MonoBehaviour
         foreach (int x in data.iRange)
         {
             int offset = data.offset;
+            int pos = 0;
+            bool prevMerge = false;
             foreach (int y in data.jRange)
             {
                 (int i, int j) = (x, y);
                 if (data.swap) (i, j) = (j, i);
                 if (_field[i, j] == 0) continue;
 
-                int pos = GetPos(i, j, dir);
+                pos = GetPos(i, j, dir, pos, prevMerge);
+                prevMerge = false;
                 if (GetFieldAtPos(i, j, pos, dir) == 0)
                 {
                     SetFieldAtPos(i, j, pos, dir, _field[i, j]);
@@ -306,9 +316,13 @@ public class Field : MonoBehaviour
                     continue;
                 }
 
+                // merge
                 if (GetFieldAtPos(i, j, pos, dir) == _field[i, j])
                 {
-                    SetFieldAtPos(i, j, pos, dir,GetFieldAtPos(i, j, pos, dir) * 2);
+                    int newValue = GetFieldAtPos(i, j, pos, dir) * 2;
+                    _gameScore.Increase(newValue);
+                    prevMerge = true;
+                    SetFieldAtPos(i, j, pos, dir, newValue);
                     _field[i, j] = 0;
                     offset = pos;
                     _fieldChanged = true;
