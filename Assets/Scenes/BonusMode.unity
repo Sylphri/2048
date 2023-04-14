@@ -1195,7 +1195,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ce8c7447bb82be42a37af5983d544e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _sceneName: ClassicMode
+  _sceneName: BonusMode
 --- !u!1 &1957217685
 GameObject:
   m_ObjectHideFlags: 0
@@ -1248,7 +1248,7 @@ MonoBehaviour:
   _width: 4
   _height: 4
   _secondsToSwipe: 0.15
-  _enableBonuses: 0
+  _enableBonuses: 1
   _bonusMulPrefab: {fileID: 1923560138295095728, guid: bd1fc6fce07f2754dad3fba0fa34cbcc, type: 3}
   _bonusDivPrefab: {fileID: 1923560138295095728, guid: 1368c06037c76af46bf438572f6ccb93, type: 3}
   _bonusDesPrefab: {fileID: 1923560138295095728, guid: 816c61d109cafed4cac9abaa988152f4, type: 3}
