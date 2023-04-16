@@ -7,15 +7,23 @@ using DG.Tweening;
 public class Field : MonoBehaviour
 {
     [SerializeField] private SwipeDetector _swipeDetector;
-    [SerializeField] private GameObject _cellPrefab;
-    [SerializeField] private Score _gameScore;
+    [SerializeField] private GameObject _tilePrefab;
+    [SerializeField] private Transform _tilesParent;
     [SerializeField] private GameObject _loseMenu;
+    [SerializeField] private Stats _stats;
 
     [Header("Field")]
+    [SerializeField] private bool _updateMoves = true;
     [SerializeField] private int _width;
     [SerializeField] private int _height;
     [SerializeField] private float _secondsToSwipe;
+    [SerializeField] private Color[] _tileColors;
+    [SerializeField] private Color[] _textColors;
 
+    public int Width { set { _width = value; } }
+    public int Height { set { _height = value; } }
+    public bool Bonuses { set { _enableBonuses = value; } }
+    
     [Header("Bonuses")]
     [SerializeField] private bool _enableBonuses;
     [SerializeField] private GameObject _bonusMulPrefab;
@@ -28,7 +36,7 @@ public class Field : MonoBehaviour
     private const int BONUS_COUNT = -3;
 
     private int[,] _field;
-    private Cell[,] _cells;
+    private Tile[,] _tiles;
 
     private bool _canSwipe = true;
     private bool _fieldChanged = false;
@@ -36,10 +44,10 @@ public class Field : MonoBehaviour
     private void Start()
     {
         _field = new int[_width, _height];
-        _cells = new Cell[_width, _height];
+        _tiles = new Tile[_width, _height];
         _swipeDetector.Swiped += OnSwiped;
         RandomSpawn();
-        RenderCells();
+        RenderTiles();
     }
 
     private void RandomSpawn()
@@ -48,7 +56,7 @@ public class Field : MonoBehaviour
         for (int i = 0; i < _width * _height; i++)
         {
             int clamp = pos % (_width * _height);
-            if (_field[clamp % _width, clamp / _height] != 0)
+            if (_field[clamp % _width, clamp / _width] != 0)
             {
                 pos++;
                 continue;
@@ -56,7 +64,7 @@ public class Field : MonoBehaviour
            
             if (_enableBonuses)
             {
-                _field[clamp % _width, clamp / _height] =
+                _field[clamp % _width, clamp / _width] =
                     UnityEngine.Random.Range(0f, 1f) > 0.85f ?
                         UnityEngine.Random.Range(0f, 0.15f) > 0.1f ? 
                             UnityEngine.Random.Range(BONUS_COUNT, 0) 
@@ -65,7 +73,7 @@ public class Field : MonoBehaviour
             }
             else
             {
-                _field[clamp % _width, clamp / _height] =
+                _field[clamp % _width, clamp / _width] =
                     UnityEngine.Random.Range(0f, 1f) > 0.9f ? 4 : 2;
             }
             return;
@@ -93,51 +101,51 @@ public class Field : MonoBehaviour
         return false;
     }
 
-    private Vector3 GetCellPos(int x, int y)
+    private Vector3 GetTilePos(int x, int y)
     {
-        return new Vector3(x - _width / 2f + 0.5f, y - _height / 2f + 0.5f, 0) + transform.position;
+        return new Vector3(x - _width / 2f + 0.5f, y - _height / 2f + 0.5f, -1.1f) + transform.position;
     }
 
-    private Vector3 GetCellPos(int i, int j, int pos, SwipeDirection dir)
+    private Vector3 GetTilePos(int i, int j, int pos, SwipeDirection dir)
     {
         switch (dir)
         {
             case SwipeDirection.Left:
             case SwipeDirection.Right:
-                return GetCellPos(pos, j);       
+                return GetTilePos(pos, j);       
             case SwipeDirection.Up:
             case SwipeDirection.Down:
-                return GetCellPos(i, pos);
+                return GetTilePos(i, pos);
             default: throw new Exception("unreachable");
         }
     }
 
-    private Vector3 GetPreviousCellPos(int i, int j, int pos, SwipeDirection dir)
+    private Vector3 GetPreviousTilePos(int i, int j, int pos, SwipeDirection dir)
     {
         switch (dir)
         {
             case SwipeDirection.Left:
-                return GetCellPos(pos + 1, j);
+                return GetTilePos(pos + 1, j);
             case SwipeDirection.Right:
-                return GetCellPos(pos - 1, j);
+                return GetTilePos(pos - 1, j);
             case SwipeDirection.Up:
-                return GetCellPos(i, pos - 1);
+                return GetTilePos(i, pos - 1);
             case SwipeDirection.Down:
-                return GetCellPos(i, pos + 1); 
+                return GetTilePos(i, pos + 1); 
             default: throw new Exception("unreachable");
         }
     }
 
-    private void RenderCells()
+    private void RenderTiles()
     {
         for (int i = 0; i < _width; i++)
         {
             for (int j = 0; j < _height; j++)
             {
-                if (_cells[i, j] != null)
+                if (_tiles[i, j] != null)
                 {
-                    Destroy(_cells[i, j].gameObject);
-                    _cells[i, j] = null;
+                    Destroy(_tiles[i, j].gameObject);
+                    _tiles[i, j] = null;
                 }
 
                 if (_field[i, j] == 0) continue;
@@ -148,13 +156,19 @@ public class Field : MonoBehaviour
                     case BONUS_MUL: prefab = _bonusMulPrefab; break;
                     case BONUS_DIV: prefab = _bonusDivPrefab; break;
                     case BONUS_DES: prefab = _bonusDesPrefab; break;
-                    default: prefab = _cellPrefab; break;
+                    default: prefab = _tilePrefab; break;
                 }
                 
-                GameObject cell = Instantiate(prefab, GetCellPos(i, j), Quaternion.identity);
-                _cells[i, j] = cell.GetComponent<Cell>();
+                GameObject cell = Instantiate(prefab, GetTilePos(i, j), Quaternion.identity, _tilesParent);
+                _tiles[i, j] = cell.GetComponent<Tile>();
                 if (_field[i, j] > 0)
-                    _cells[i, j].SetValue(_field[i, j].ToString());
+                {
+                    _tiles[i, j].SetValue(_field[i, j].ToString());
+
+                    int index = Mathf.Clamp(((int)Mathf.Log(_field[i, j], 2)) - 1, 0, _tileColors.Length - 1);
+                    _tiles[i, j].SetBackgroundColor(_tileColors[index]);
+                    _tiles[i, j].SetTextColor(_textColors[index]);
+                }
             }
         }
     }
@@ -166,7 +180,11 @@ public class Field : MonoBehaviour
 
         Slide(direction);
 
-        if (_fieldChanged) RandomSpawn();
+        if (_fieldChanged) 
+        {
+            RandomSpawn();
+            if (_updateMoves) _stats.AddMove();
+        }
         if (!CanMove()) _loseMenu.SetActive(true);
     }
 
@@ -305,7 +323,7 @@ public class Field : MonoBehaviour
         var sequence = DOTween.Sequence();
         sequence.OnComplete(() =>
         {
-            RenderCells();
+            RenderTiles();
             _canSwipe = true;
         });
 
@@ -330,7 +348,7 @@ public class Field : MonoBehaviour
                     SetFieldAtPos(i, j, pos, dir, _field[i, j]);
                     _field[i, j] = 0;
                     _fieldChanged = true;
-                    sequence.Insert(0, _cells[i, j].transform.DOMove(GetCellPos(i, j, pos, dir), _secondsToSwipe));
+                    sequence.Insert(0, _tiles[i, j].transform.DOMove(GetTilePos(i, j, pos, dir), _secondsToSwipe));
                     continue;
                 }
 
@@ -339,7 +357,7 @@ public class Field : MonoBehaviour
                     SetPrevious(i, j, pos, dir, _field[i, j]);
                     _field[i, j] = 0;
                     _fieldChanged = true;
-                    sequence.Insert(0, _cells[i, j].transform.DOMove(GetPreviousCellPos(i, j, pos, dir), _secondsToSwipe));
+                    sequence.Insert(0, _tiles[i, j].transform.DOMove(GetPreviousTilePos(i, j, pos, dir), _secondsToSwipe));
                     continue;
                 }
 
@@ -359,9 +377,9 @@ public class Field : MonoBehaviour
 
                 if (newValue > -1)
                 {
-                    sequence.Insert(0, _cells[i, j].transform.DOMove(GetCellPos(i, j, pos, dir), _secondsToSwipe));
+                    sequence.Insert(0, _tiles[i, j].transform.DOMove(GetTilePos(i, j, pos, dir), _secondsToSwipe));
                     SetFieldAtPos(i, j, pos, dir, newValue);
-                    _gameScore.Increase(newValue);
+                    _stats.IncreaseScore(newValue);
                     _field[i, j] = 0;
                     offset = pos;
                     prevMerge = true;
