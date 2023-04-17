@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using DG.Tweening;
@@ -11,12 +12,15 @@ public class Field : MonoBehaviour
     [SerializeField] private Transform _tilesParent;
     [SerializeField] private GameObject _loseMenu;
     [SerializeField] private Stats _stats;
+    [SerializeField] private PopUpSpawner _spawner;
 
     [Header("Field")]
     [SerializeField] private bool _updateMoves = true;
     [SerializeField] private int _width;
     [SerializeField] private int _height;
     [SerializeField] private float _secondsToSwipe;
+    [SerializeField] private float _secondsToPop;
+    [SerializeField] private float _popScale;
     [SerializeField] private Color[] _tileColors;
     [SerializeField] private Color[] _textColors;
 
@@ -121,7 +125,7 @@ public class Field : MonoBehaviour
             default: throw new Exception("unreachable");
         }
     }
-
+    
     private Vector3 GetPreviousTilePos(int i, int j, int pos, SwipeDirection dir)
     {
         switch (dir)
@@ -134,6 +138,48 @@ public class Field : MonoBehaviour
                 return GetTilePos(i, pos - 1);
             case SwipeDirection.Down:
                 return GetTilePos(i, pos + 1); 
+            default: throw new Exception("unreachable");
+        }
+    }
+
+    private Vector2Int GetTileIdx(int i, int j, int pos, SwipeDirection dir)
+    {
+        switch (dir)
+        {
+            case SwipeDirection.Left:
+            case SwipeDirection.Right:
+                return new Vector2Int(pos, j);       
+            case SwipeDirection.Up:
+            case SwipeDirection.Down:
+                return new Vector2Int(i, pos); 
+            default: throw new Exception("unreachable");
+        }
+    }
+
+    private void RaiseTileAtPos(int i, int j, int pos, SwipeDirection dir)
+    {
+        switch (dir)
+        {
+            case SwipeDirection.Left:
+                while (_tiles[pos, j] == null)
+                    pos++;
+                _tiles[pos, j].transform.position += new Vector3(0f, 0f, -0.1f);
+                break;           
+            case SwipeDirection.Right:
+                while (_tiles[pos, j] == null)
+                    pos--;
+                _tiles[pos, j].transform.position += new Vector3(0f, 0f, -0.1f);
+                break;           
+            case SwipeDirection.Up:
+                while (_tiles[i, pos] == null)
+                    pos--;
+                _tiles[i, pos].transform.position += new Vector3(0f, 0f, -0.1f);
+                break;           
+            case SwipeDirection.Down:
+                while (_tiles[i, pos] == null)
+                    pos++;
+                _tiles[i, pos].transform.position += new Vector3(0f, 0f, -0.1f);
+                break;           
             default: throw new Exception("unreachable");
         }
     }
@@ -169,12 +215,36 @@ public class Field : MonoBehaviour
                 {
                     _tiles[i, j].SetValue(_field[i, j].ToString());
 
-                    int index = Mathf.Clamp(((int)Mathf.Log(_field[i, j], 2)) - 1, 0, _tileColors.Length - 1);
+                    int index = Mathf.Max(((int)Mathf.Log(_field[i, j], 2)) - 1, 0) % _tileColors.Length;
                     _tiles[i, j].SetBackgroundColor(_tileColors[index]);
                     _tiles[i, j].SetTextColor(_textColors[index]);
                 }
             }
         }
+    }
+
+    private IEnumerator PopTiles(List<Vector2Int> indeces)
+    {
+        if (indeces.Count != 0)
+        {
+            float past = 0;
+            Vector3 scale = _tiles[indeces[0].x, indeces[0].y].transform.localScale;
+            while (past < _secondsToPop)
+            {
+                float ratio = past / _secondsToPop * Mathf.PI;
+                foreach (var idx in indeces)
+                {
+                    Transform tile = _tiles[idx.x, idx.y].transform; 
+                    tile.localScale = new Vector3(Mathf.Sin(ratio) * _popScale + scale.x, Mathf.Sin(ratio) * _popScale + scale.y, scale.z);       
+                }
+                past += Time.deltaTime;
+                yield return null;
+            }
+            
+            foreach (var idx in indeces)
+                _tiles[idx.x, idx.y].transform.localScale = scale; 
+        }
+        yield return null;
     }
 
     private void OnSwiped(SwipeDirection direction)
@@ -324,13 +394,16 @@ public class Field : MonoBehaviour
     private void Slide(SwipeDirection dir)
     {
         _fieldChanged = false;
+        List<Vector2Int> mergedTiles = new List<Vector2Int>();
         var sequence = DOTween.Sequence();
         sequence.OnComplete(() =>
         {
             RenderTiles();
+            StartCoroutine(PopTiles(mergedTiles));
             _canSwipe = true;
         });
 
+        int totalScore = 0;
         SlideData data = GetSlideData(dir);
         foreach (int x in data.iRange)
         {
@@ -381,9 +454,12 @@ public class Field : MonoBehaviour
 
                 if (newValue > -1)
                 {
+                    RaiseTileAtPos(i, j, pos, dir);
                     sequence.Insert(0, _tiles[i, j].transform.DOMove(GetTilePos(i, j, pos, dir), _secondsToSwipe));
                     SetFieldAtPos(i, j, pos, dir, newValue);
                     _stats.IncreaseScore(newValue);
+                    totalScore += newValue;
+                    mergedTiles.Add(GetTileIdx(i, j, pos, dir));
                     _field[i, j] = 0;
                     offset = pos;
                     prevMerge = true;
@@ -391,5 +467,8 @@ public class Field : MonoBehaviour
                 }
             }
         }
+
+        if (totalScore > 0)
+            _spawner.Spawn("+" + totalScore.ToString());
     }
 }

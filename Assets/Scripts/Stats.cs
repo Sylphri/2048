@@ -7,6 +7,7 @@ public class Stats : MonoBehaviour
     [SerializeField] private TMP_Text _movesCountLabel;
     [SerializeField] private TMP_Text _scoreLabel;
     [SerializeField] private TMP_Text _bestLabel;
+    [SerializeField] private string _modeTitle;
 
     private int _moves;  
     private int _score;
@@ -14,7 +15,7 @@ public class Stats : MonoBehaviour
 
     private void Start()
     {
-        _best = PlayerPrefs.GetInt("Best", 0); 
+        _best = PlayerPrefs.GetInt("Best" + _modeTitle, 0); 
         _bestLabel.text = _best.ToString();
     }
 
@@ -36,6 +37,6 @@ public class Stats : MonoBehaviour
         _score += value;
         _scoreLabel.text = _score.ToString(); 
         if (_score > _best)
-            PlayerPrefs.SetInt("Best", _score);
+            PlayerPrefs.SetInt("Best" + _modeTitle, _score);
     }
 }

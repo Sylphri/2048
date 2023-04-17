@@ -8,7 +8,41 @@ public class Tile : MonoBehaviour
 
     public void SetValue(string value)
     {
-        _tileText.text = value;
+        if (value.Length < 4)
+        {
+            _tileText.fontSize = 50;
+            _tileText.text = value;
+        }
+        else if (value.Length == 4)
+        {
+            _tileText.fontSize = 40;
+            _tileText.text = value;
+        }
+        else if (value.Length == 5)
+        {
+            _tileText.fontSize = 50;
+            _tileText.text = value.Remove(2) + "K";
+        }
+        else if (value.Length == 6)
+        {
+            _tileText.fontSize = 40;
+            _tileText.text = value.Remove(3) + "K";
+        }
+        else if (value.Length < 9)
+        {
+            _tileText.fontSize = 50;
+            _tileText.text = value.Remove(value.Length - 6) + "M";
+        }
+        else if (value.Length == 9)
+        {
+            _tileText.fontSize = 40;
+            _tileText.text = value.Remove(3) + "M";
+        }
+        else 
+        {
+            _tileText.fontSize = 50;
+            _tileText.text = value.Remove(1) + "B";
+        }
     }
 
     public void SetBackgroundColor(Color color)

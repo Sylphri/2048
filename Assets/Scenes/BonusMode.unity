@@ -207,9 +207,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1341693588}
         m_TargetAssemblyTypeName: GameMenu, Assembly-CSharp
-        m_MethodName: OnRestartBtnClick
+        m_MethodName: OnMenuBtnClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2457,6 +2457,7 @@ MonoBehaviour:
   _movesCountLabel: {fileID: 527173264}
   _scoreLabel: {fileID: 1206150885}
   _bestLabel: {fileID: 1498662631}
+  _modeTitle: Bonus
 --- !u!1 &1116037460
 GameObject:
   m_ObjectHideFlags: 0
@@ -2541,7 +2542,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1341693588}
         m_TargetAssemblyTypeName: GameMenu, Assembly-CSharp
         m_MethodName: OnRestartBtnClick
         m_Mode: 1
@@ -2904,8 +2905,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1265713289}
   - component: {fileID: 1265713288}
-  - component: {fileID: 1265713287}
   - component: {fileID: 1265713286}
+  - component: {fileID: 1265713290}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -2930,29 +2931,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &1265713287
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1265713285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
-  m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
-  m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
-  m_PhysicalUnit: 3
-  m_FallbackScreenDPI: 96
-  m_DefaultSpriteDPI: 96
-  m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
 --- !u!223 &1265713288
 Canvas:
   m_ObjectHideFlags: 0
@@ -2997,6 +2975,29 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1265713290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1265713285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_UiScaleMode: 1
+  m_ReferencePixelsPerUnit: 100
+  m_ScaleFactor: 1
+  m_ReferenceResolution: {x: 1080, y: 2160}
+  m_ScreenMatchMode: 0
+  m_MatchWidthOrHeight: 0.5
+  m_PhysicalUnit: 3
+  m_FallbackScreenDPI: 96
+  m_DefaultSpriteDPI: 96
+  m_DynamicPixelsPerUnit: 1
+  m_PresetInfoIsWorld: 0
 --- !u!1 &1341693587
 GameObject:
   m_ObjectHideFlags: 0
@@ -3647,7 +3648,7 @@ MonoBehaviour:
   _swipeDetector: {fileID: 1488198977}
   _tilePrefab: {fileID: 1923560138295095728, guid: c010e2316674d244fa4055b9ad08a3c4, type: 3}
   _tilesParent: {fileID: 844553411}
-  _loseMenu: {fileID: 0}
+  _loseMenu: {fileID: 32975667}
   _stats: {fileID: 1054641845}
   _updateMoves: 1
   _width: 4
@@ -3678,9 +3679,9 @@ MonoBehaviour:
   - {r: 0.9843137, g: 0.972549, b: 0.9372549, a: 1}
   - {r: 0.9843137, g: 0.972549, b: 0.9372549, a: 1}
   _enableBonuses: 1
-  _bonusMulPrefab: {fileID: 1923560138295095728, guid: bd1fc6fce07f2754dad3fba0fa34cbcc, type: 3}
-  _bonusDivPrefab: {fileID: 1923560138295095728, guid: 1368c06037c76af46bf438572f6ccb93, type: 3}
-  _bonusDesPrefab: {fileID: 1923560138295095728, guid: 816c61d109cafed4cac9abaa988152f4, type: 3}
+  _bonusMulPrefab: {fileID: 1923560138295095728, guid: 478773d455672c243a3411d547256b06, type: 3}
+  _bonusDivPrefab: {fileID: 1923560138295095728, guid: c09f95df64ffc764d810170e2f3b89f9, type: 3}
+  _bonusDesPrefab: {fileID: 1923560138295095728, guid: f946569e548dfaa478c0f5041087946f, type: 3}
 --- !u!4 &1727841607
 Transform:
   m_ObjectHideFlags: 0

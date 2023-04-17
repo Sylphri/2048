@@ -5,19 +5,14 @@ using TMPro;
 
 public class Menu : MonoBehaviour
 {
-    [SerializeField] private GameObject _playButton;
     [SerializeField] private GameObject _modesPanel;
     [SerializeField] private GameObject _customSettings;
     [SerializeField] private TMP_Dropdown _widthDropdown;
     [SerializeField] private TMP_Dropdown _heightDropdown;
     [SerializeField] private Toggle _bonusesToggle;
-    
-    public void OnPlayBtnClick() 
-    {
-        _playButton.SetActive(false);
-        _modesPanel.SetActive(true);
-    }
 
+    private bool _inMenu = true;
+    
     public void OnClassicBtnClick()
     {
         SceneManager.LoadScene("ClassicMode");
@@ -35,8 +30,8 @@ public class Menu : MonoBehaviour
 
     public void OnCustomBtnClick()
     {
-        _modesPanel.SetActive(false);
-        _customSettings.SetActive(true);
+        _inMenu = false;
+        SwitchMenu();
     }
 
     public void OnCustomPlayBtnClick()
@@ -45,5 +40,26 @@ public class Menu : MonoBehaviour
         PlayerPrefs.SetInt("Height", int.Parse(_heightDropdown.captionText.text));
         PlayerPrefs.SetInt("Bonuses", _bonusesToggle.isOn ? 1 : 0);
         SceneManager.LoadScene("CustomMode");
+    }
+
+    private void SwitchMenu()
+    {
+        _modesPanel.SetActive(_inMenu);
+        _customSettings.SetActive(!_inMenu);
+    }
+
+    private void Update()
+    {
+        if (!Input.GetKey(KeyCode.Escape)) return;
+        
+        if (!_inMenu)
+        {
+            _inMenu = true;
+            SwitchMenu();
+        }
+        else 
+        {
+            Application.Quit();
+        }
     }
 }

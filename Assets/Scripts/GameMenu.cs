@@ -7,4 +7,15 @@ public class GameMenu : MonoBehaviour
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+
+    public void OnMenuBtnClick()
+    {
+        SceneManager.LoadScene("Menu");
+    }
+    
+    private void Update()
+    {
+        if (!Input.GetKey(KeyCode.Escape)) return;
+        OnMenuBtnClick();
+    }
 }
