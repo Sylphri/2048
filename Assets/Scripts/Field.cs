@@ -103,7 +103,9 @@ public class Field : MonoBehaviour
 
     private Vector3 GetTilePos(int x, int y)
     {
-        return new Vector3(x - _width / 2f + 0.5f, y - _height / 2f + 0.5f, -1.1f) + transform.position;
+        return new Vector3((x - _width / 2f + 0.5f) * transform.localScale.x,
+                           (y - _height / 2f + 0.5f) * transform.localScale.y,
+                          -1.1f) + transform.position;
     }
 
     private Vector3 GetTilePos(int i, int j, int pos, SwipeDirection dir)
@@ -159,8 +161,10 @@ public class Field : MonoBehaviour
                     default: prefab = _tilePrefab; break;
                 }
                 
-                GameObject cell = Instantiate(prefab, GetTilePos(i, j), Quaternion.identity, _tilesParent);
-                _tiles[i, j] = cell.GetComponent<Tile>();
+                GameObject tile = Instantiate(prefab, GetTilePos(i, j), Quaternion.identity, _tilesParent);
+                Vector3 tileScale = tile.transform.localScale;
+                tile.transform.localScale = new Vector3(tileScale.x * transform.localScale.x, tileScale.y * transform.localScale.y, tileScale.z);
+                _tiles[i, j] = tile.GetComponent<Tile>();
                 if (_field[i, j] > 0)
                 {
                     _tiles[i, j].SetValue(_field[i, j].ToString());
