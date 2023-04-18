@@ -10,9 +10,10 @@ public class Field : MonoBehaviour
     [SerializeField] private SwipeDetector _swipeDetector;
     [SerializeField] private GameObject _tilePrefab;
     [SerializeField] private Transform _tilesParent;
-    [SerializeField] private GameObject _loseMenu;
     [SerializeField] private Stats _stats;
     [SerializeField] private PopUpSpawner _spawner;
+    [SerializeField] private AudioSource _slideSound;
+    [SerializeField] private AudioSource _mergeSound;
 
     [Header("Field")]
     [SerializeField] private bool _updateMoves = true;
@@ -44,6 +45,7 @@ public class Field : MonoBehaviour
 
     private bool _canSwipe = true;
     private bool _fieldChanged = false;
+    private bool _merged = false;
 
     private void Start()
     {
@@ -227,29 +229,34 @@ public class Field : MonoBehaviour
     {
         if (indeces.Count != 0)
         {
+            List<Transform> tiles = new List<Transform>();
+            foreach (var idx in indeces)
+                tiles.Add(_tiles[idx.x, idx.y].transform);
+
             float past = 0;
-            Vector3 scale = _tiles[indeces[0].x, indeces[0].y].transform.localScale;
+            Vector3 scale = tiles[0].transform.localScale;
             while (past < _secondsToPop)
             {
                 float ratio = past / _secondsToPop * Mathf.PI;
-                foreach (var idx in indeces)
+                foreach (var tile in tiles)
                 {
-                    Transform tile = _tiles[idx.x, idx.y].transform; 
-                    tile.localScale = new Vector3(Mathf.Sin(ratio) * _popScale + scale.x, Mathf.Sin(ratio) * _popScale + scale.y, scale.z);       
+                    if (tile != null)
+                        tile.localScale = new Vector3(Mathf.Sin(ratio) * _popScale + scale.x, Mathf.Sin(ratio) * _popScale + scale.y, scale.z);       
                 }
                 past += Time.deltaTime;
                 yield return null;
             }
             
-            foreach (var idx in indeces)
-                _tiles[idx.x, idx.y].transform.localScale = scale; 
+            foreach (var tile in tiles)
+                if (tile != null)
+                    tile.localScale = scale; 
         }
         yield return null;
     }
 
     private void OnSwiped(SwipeDirection direction)
     {
-        if (!_canSwipe) return;
+        if (!_canSwipe || _stats.gameOver) return;
         _canSwipe = false;
 
         Slide(direction);
@@ -259,7 +266,9 @@ public class Field : MonoBehaviour
             RandomSpawn();
             if (_updateMoves) _stats.AddMove();
         }
-        if (!CanMove()) _loseMenu.SetActive(true);
+        
+        if (!CanMove()) 
+            _stats.GameOver();
     }
 
     private struct SlideData
@@ -400,6 +409,12 @@ public class Field : MonoBehaviour
         {
             RenderTiles();
             StartCoroutine(PopTiles(mergedTiles));
+            if (_merged) 
+            {
+                if (PlayerPrefs.GetInt("Sounds", 1) == 1)
+                    _mergeSound.Play();
+                _merged = false;
+            };
             _canSwipe = true;
         });
 
@@ -456,19 +471,30 @@ public class Field : MonoBehaviour
                 {
                     RaiseTileAtPos(i, j, pos, dir);
                     sequence.Insert(0, _tiles[i, j].transform.DOMove(GetTilePos(i, j, pos, dir), _secondsToSwipe));
-                    SetFieldAtPos(i, j, pos, dir, newValue);
+                    
                     _stats.IncreaseScore(newValue);
-                    totalScore += newValue;
-                    mergedTiles.Add(GetTileIdx(i, j, pos, dir));
+                    if (newValue == 2048)
+                        _stats.Win();
+                    
+                    SetFieldAtPos(i, j, pos, dir, newValue);
                     _field[i, j] = 0;
+                    
+                    if (newValue != 0)
+                        mergedTiles.Add(GetTileIdx(i, j, pos, dir));
+                    
+                    totalScore += newValue;
                     offset = pos;
                     prevMerge = true;
+                    _merged = true;
                     _fieldChanged = true;
                 }
             }
         }
 
+        if (_fieldChanged && PlayerPrefs.GetInt("Sounds", 1) == 1)
+            _slideSound.Play();
+        
         if (totalScore > 0)
-            _spawner.Spawn("+" + totalScore.ToString());
+            _spawner.Spawn(totalScore.ToString());
     }
 }
