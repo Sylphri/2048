@@ -473,7 +473,7 @@ public class Field : MonoBehaviour
                     sequence.Insert(0, _tiles[i, j].transform.DOMove(GetTilePos(i, j, pos, dir), _secondsToSwipe));
                     
                     _stats.IncreaseScore(newValue);
-                    if (newValue == 2048)
+                    if (!_stats.gameWin && newValue == 2048)
                         _stats.Win();
                     
                     SetFieldAtPos(i, j, pos, dir, newValue);

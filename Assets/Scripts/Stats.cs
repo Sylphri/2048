@@ -16,6 +16,7 @@ public class Stats : MonoBehaviour
     private int _best;
 
     public bool gameOver { private set; get; }
+    public bool gameWin { private set; get; }
 
     private void Start()
     {
@@ -76,6 +77,7 @@ public class Stats : MonoBehaviour
 
     public void Win()
     {
+        gameWin = true;
         int time = (int)Time.timeSinceLevelLoad;
         _winMenu.SetActive(true);
         WinMenu menu = _winMenu.GetComponent<WinMenu>();
